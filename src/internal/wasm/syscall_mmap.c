@@ -45,8 +45,7 @@ static uint64_t used_pages[BITMAP_ELTS];
 static int heap_inited;
 static uintptr_t heap_bottom;
 static const uintptr_t dummy_heap_bottom;
-//weak_alias(dummy_heap_bottom, __heap_bottom);
-#define __heap_bottom dummy_heap_bottom
+weak_alias(dummy_heap_bottom, __heap_bottom); // XXX See https://bugs.llvm.org/show_bug.cgi?id=35544
 
 
 /* For all these, the arguments are page-aligned and the lock is held. */
