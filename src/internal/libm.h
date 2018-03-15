@@ -60,6 +60,13 @@ union ldshape {
 #error Unsupported long double representation
 #endif
 
+#ifdef __wasm__
+/*
+ * wasm doesn't have user-accessible floating point exceptions, so there's
+ * no advantage to forcing floating-point expression evaluations.
+ */
+#define FORCE_EVAL(x) (x)
+#else
 #define FORCE_EVAL(x) do {                        \
 	if (sizeof(x) == sizeof(float)) {         \
 		volatile float __x;               \
@@ -72,6 +79,7 @@ union ldshape {
 		__x = (x);                        \
 	}                                         \
 } while(0)
+#endif
 
 /* Get two 32 bit ints from a double.  */
 #define EXTRACT_WORDS(hi,lo,d)                    \

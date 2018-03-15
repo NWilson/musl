@@ -1,0 +1,51 @@
+### Wasm overview
+
+Wasm ("WebAssembly") is a bytecode format, an ISA for an abstract virtual
+processor.  It is intended to offer a similar feature-set to real ISAs like
+x86/arm, so that it can be very quickly translated to native code for execution
+at full native speed, but it's low-level enough that a compiler targetting
+Wasm output is able to do all the useful optimisations at compile-time, so that
+the just-in-time translation to native code is nowhere near as intensive as it
+is to optimise a high-level language like C.
+
+In short, it's the ideal language for a web browser to execute.
+
+The "host environment" refers to the executor/interpreter of the Wasm binary,
+and the functions it provides to the compiled binary to fulfill its unresolved
+symbols.
+
+### Wasm syscalls
+
+Musl's support for Wasm assumes that the host environment will provide the
+"kernel" at runtime.  The host application is probably a web browser, and will
+implement syscalls such that __syscall_writev prints lines to the browser's
+debugging console (for printf support), and so on.
+
+The Wasm format additionally includes its own controls, provided as part of the
+ISA, including sbrk, and in future futex and more.  These are provided directly
+to the C code via compiler builtins.
+
+Thus, Musl implements certain syscalls itself, namely those which WebAssembly
+provides support for.  The hosting application should not have to care about
+these (indeed it can't provide them).
+
+Anything which relates to the browser however (file access, date/time, ...) is
+outside the knowledge of a generic Wasm binary.
+
+Musl statically links in the syscalls that the calling application actually
+uses.  Thus, the application can use any syscall-based functionality it chooses,
+as long as the environment executing the Wasm binary is able to provide
+definitions for those syscalls.
+
+No attempt is made to turn off irrelevant functionality.  For example, if the
+C application uses "kill()", that's fine - the hosting environment simply has
+to provide __syscall_kill.  It's not Musl's business to restrict how much or
+how little of a full Linux environment the host implements.  An interpreter
+may not be a web browser, but could be a complete interpreter running the Wasm
+binary by forwarding the syscalls to the host's kernel - or it could be web
+browser implementing only a small number of syscalls and emulating a "safe"
+environment within a browser.
+
+This assumes that the hosting environment and the C application are developed
+together; or, that the C environment is written according to the known
+capabilities of a target hosting environment.
